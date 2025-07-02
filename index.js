@@ -63,7 +63,7 @@ app.get('/api/notas', async (req, res) => {
     const notas = await Nota.find();
     res.json(notas);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener las notas' });
+    res.status(500).json({ error: 'Error al obtener las notas'+error });
   }
 });
 
