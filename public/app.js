@@ -194,6 +194,11 @@ createApp({
           
           // Guardar referencia al marcador en el examen para búsqueda rápida
           examen.marker = marker;
+          
+          // Manejar clic en el marcador
+          marker.on('click', () => {
+            selectedStudent.value = examen._id;
+          });
         });
 
         // Ajustar vista para mostrar todos los marcadores si hay datos
@@ -226,6 +231,19 @@ createApp({
       });
     };
     
+    const getHighlightedMarkerIcon = (nota) => {
+      return L.divIcon({
+        className: 'custom-marker highlighted-marker',
+        html: `
+          <div style="background-color: #ff00ff; border: 2px solid white" class="marker-pin"></div>
+          <span style="color: #ff00ff; font-weight: bold">${nota}</span>
+        `,
+        iconSize: [34, 46],
+        iconAnchor: [17, 46],
+        popupAnchor: [0, -40]
+      });
+    };
+    
     const toggleHeatmap = () => {
       updateMapLayers();
     };
@@ -245,24 +263,15 @@ createApp({
         );
       
       if (marker) {
-        // Resaltar el marcador
+        // Quitar resaltado del marcador anterior
         if (highlightedMarker.value) {
-          highlightedMarker.value.setIcon(getMarkerIcon(highlightedMarker.value.examenData?.nota));
+          highlightedMarker.value.setIcon(
+            getMarkerIcon(highlightedMarker.value.examenData?.nota)
+          );
         }
         
-        // Crear un icono especial para el marcador seleccionado
-        const highlightIcon = L.divIcon({
-          className: 'custom-marker highlighted',
-          html: `
-            <div style="background-color: #ff00ff; border: 2px solid white" class="marker-pin"></div>
-            <span style="color: #ff00ff; font-weight: bold">${examen.nota}</span>
-          `,
-          iconSize: [34, 46],
-          iconAnchor: [17, 46],
-          popupAnchor: [0, -40]
-        });
-        
-        marker.setIcon(highlightIcon);
+        // Resaltar el nuevo marcador
+        marker.setIcon(getHighlightedMarkerIcon(examen.nota));
         marker.examenData = examen;
         highlightedMarker.value = marker;
         
