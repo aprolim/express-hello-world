@@ -4,102 +4,260 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard de Exámenes</title>
+  <!-- Vue 3 -->
   <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+  <!-- Axios -->
   <script src="https://cdn.jsdelivr.net/npm/axios@1.3.4/dist/axios.min.js"></script>
+  <!-- Socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=visualization"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <!-- Leaflet Heatmap -->
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .map-container {
       height: 500px;
       width: 100%;
+      border-radius: 8px;
+      z-index: 1;
     }
     .card {
       margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     .top-students {
       max-height: 400px;
       overflow-y: auto;
     }
+    .student-item {
+      transition: all 0.3s ease;
+    }
+    .student-item:hover {
+      background-color: #f8f9fa;
+      transform: translateX(5px);
+    }
+    .badge-score {
+      font-size: 0.9em;
+      min-width: 40px;
+    }
+    .stats-card {
+      border-left: 4px solid #0d6efd;
+    }
+    .groups-card {
+      border-left: 4px solid #dc3545;
+    }
+    .map-card {
+      border-left: 4px solid #198754;
+    }
+    .refresh-btn {
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .refresh-btn:hover {
+      transform: rotate(180deg);
+    }
+    #heatmap-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
   <div id="app" class="container-fluid py-4">
-    <h1 class="text-center mb-4">Dashboard de Exámenes</h1>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <h1 class="mb-0">
+            <i class="fas fa-chart-line text-primary"></i> Dashboard de Exámenes
+          </h1>
+          <div>
+            <button @click="exportToExcel" class="btn btn-success me-2">
+              <i class="fas fa-file-excel"></i> Exportar
+            </button>
+            <button @click="refreshData" class="btn btn-primary">
+              <i class="fas fa-sync-alt refresh-btn" :class="{'fa-spin': loading}"></i> Actualizar
+            </button>
+          </div>
+        </div>
+        <hr>
+      </div>
+    </div>
     
     <div class="row">
-      <div class="col-md-4">
+      <!-- Columna izquierda - Estadísticas -->
+      <div class="col-lg-4">
+        <!-- Tarjeta de mejores estudiantes -->
         <div class="card">
           <div class="card-header bg-primary text-white">
-            <h5>Mejores Calificaciones</h5>
+            <h5 class="mb-0">
+              <i class="fas fa-trophy"></i> Top 10 Estudiantes
+            </h5>
           </div>
           <div class="card-body top-students">
+            <div v-if="topExamenes.length === 0" class="text-center py-3">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+            </div>
             <ul class="list-group">
               <li v-for="(examen, index) in topExamenes" :key="examen._id" 
-                  class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                  <strong>#{{ index + 1 }}</strong> {{ examen.nombre }} ({{ examen.ci }})
-                </span>
-                <span class="badge bg-primary rounded-pill">{{ examen.nota }}</span>
+                  class="list-group-item student-item d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="fw-bold">#{{ index + 1 }}</span> {{ examen.nombre }}<br>
+                  <small class="text-muted">{{ examen.ci }} | {{ formatDate(examen.createdAt) }}</small>
+                </div>
+                <span class="badge bg-primary rounded-pill badge-score">{{ examen.nota }}</span>
               </li>
             </ul>
           </div>
         </div>
         
-        <div class="card">
-          <div class="card-header bg-success text-white">
-            <h5>Estadísticas</h5>
+        <!-- Tarjeta de estadísticas -->
+        <div class="card stats-card">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-chart-pie"></i> Estadísticas Generales
+            </h5>
           </div>
           <div class="card-body">
-            <div class="mb-3">
-              <strong>Promedio:</strong> {{ estadisticas.promedio.toFixed(2) }}
+            <div v-if="estadisticas.total === 0" class="text-center py-3">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
             </div>
-            <div class="mb-3">
-              <strong>Máxima nota:</strong> {{ estadisticas.maxima }}
-            </div>
-            <div class="mb-3">
-              <strong>Mínima nota:</strong> {{ estadisticas.minima }}
-            </div>
-            <div class="mb-3">
-              <strong>Tiempo promedio:</strong> {{ estadisticas.tiempoPromedio.toFixed(2) }}s
-            </div>
-            <div class="mb-3">
-              <strong>Total exámenes:</strong> {{ estadisticas.total }}
+            <div v-else>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="p-3 bg-light rounded">
+                    <h6 class="text-muted mb-2">Promedio</h6>
+                    <h3 class="mb-0">{{ estadisticas.promedio.toFixed(2) }}</h3>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="p-3 bg-light rounded">
+                    <h6 class="text-muted mb-2">Máxima</h6>
+                    <h3 class="mb-0 text-success">{{ estadisticas.maxima }}</h3>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="p-3 bg-light rounded">
+                    <h6 class="text-muted mb-2">Mínima</h6>
+                    <h3 class="mb-0 text-danger">{{ estadisticas.minima }}</h3>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="p-3 bg-light rounded">
+                    <h6 class="text-muted mb-2">Tiempo (s)</h6>
+                    <h3 class="mb-0">{{ estadisticas.tiempoPromedio.toFixed(2) }}</h3>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="p-3 bg-light rounded">
+                    <h6 class="text-muted mb-2">Total Exámenes</h6>
+                    <h3 class="mb-0">{{ estadisticas.total }}</h3>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        
-        <button @click="exportToExcel" class="btn btn-warning w-100 mb-3">
-          Exportar a Excel
-        </button>
       </div>
       
-      <div class="col-md-8">
-        <div class="card">
-          <div class="card-header bg-info text-white">
-            <h5>Mapa de Ubicaciones</h5>
+      <!-- Columna derecha - Mapa y grupos -->
+      <div class="col-lg-8">
+        <!-- Tarjeta del mapa -->
+        <div class="card map-card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-map-marked-alt"></i> Mapa de Ubicaciones
+            </h5>
           </div>
-          <div class="card-body">
+          <div class="card-body position-relative p-0">
             <div id="map" class="map-container"></div>
+            <div id="heatmap-controls" v-if="examenes.length > 0">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="heatmapToggle" v-model="showHeatmap" @change="toggleHeatmap">
+                <label class="form-check-label" for="heatmapToggle">Mapa de calor</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="markersToggle" v-model="showMarkers" @change="toggleMarkers">
+                <label class="form-check-label" for="markersToggle">Marcadores</label>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div class="card mt-4">
-          <div class="card-header bg-danger text-white">
-            <h5>Posibles Grupos de Examen</h5>
+        <!-- Tarjeta de grupos sospechosos -->
+        <div class="card groups-card">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-users"></i> Posibles Grupos de Examen
+            </h5>
           </div>
           <div class="card-body">
-            <div v-if="grupos.length === 0" class="alert alert-info">
-              No se detectaron grupos sospechosos
+            <div v-if="loadingGroups" class="text-center py-3">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
             </div>
-            <div v-else v-for="(grupo, index) in grupos" :key="index" class="mb-3">
-              <h6>Grupo {{ index + 1 }} ({{ grupo.length }} personas)</h6>
-              <ul class="list-group">
-                <li v-for="persona in grupo" :key="persona._id" class="list-group-item">
-                  {{ persona.nombre }} ({{ persona.ci }}) - Nota: {{ persona.nota }} - 
-                  {{ new Date(persona.createdAt).toLocaleString() }}
-                </li>
-              </ul>
+            <div v-else-if="grupos.length === 0" class="alert alert-info mb-0">
+              <i class="fas fa-info-circle"></i> No se detectaron grupos sospechosos
+            </div>
+            <div v-else>
+              <div class="accordion" id="groupsAccordion">
+                <div v-for="(grupo, index) in grupos" :key="index" class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                            :data-bs-target="'#groupCollapse' + index" :aria-expanded="index === 0">
+                      Grupo {{ index + 1 }} ({{ grupo.length }} personas) - 
+                      <span class="badge bg-primary ms-2">Nota promedio: {{ calculateAverage(grupo).toFixed(2) }}</span>
+                    </button>
+                  </h2>
+                  <div :id="'groupCollapse' + index" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
+                    <div class="accordion-body">
+                      <button @click="zoomToGroup(grupo)" class="btn btn-sm btn-outline-primary mb-3">
+                        <i class="fas fa-search-location"></i> Ver en mapa
+                      </button>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>CI</th>
+                              <th>Nota</th>
+                              <th>Tiempo</th>
+                              <th>Fecha</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="persona in grupo" :key="persona._id" 
+                                @click="zoomToLocation(persona.latitud, persona.longitud)"
+                                style="cursor: pointer;">
+                              <td>{{ persona.nombre }}</td>
+                              <td>{{ persona.ci }}</td>
+                              <td :class="{'text-success': persona.nota >= 80, 'text-danger': persona.nota < 50}">
+                                {{ persona.nota }}
+                              </td>
+                              <td>{{ persona.tiempoRespuesta }}s</td>
+                              <td>{{ formatDate(persona.createdAt) }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -107,6 +265,11 @@
     </div>
   </div>
 
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <!-- App JS -->
   <script src="app.js"></script>
 </body>
 </html>
