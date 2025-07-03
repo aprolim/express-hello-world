@@ -99,7 +99,7 @@ router.get('/', async (req, res) => {
     console.error('Error al obtener notas:', err);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       status: 'error',
-      message: 'Error al obtener las notas de la base de datos'
+      message: 'Error al obtener las notas de la base de datos'+err
     });
   }
 });
