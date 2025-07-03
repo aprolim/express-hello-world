@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Exámenes</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.3.4/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=visualization"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .map-container {
+      height: 500px;
+      width: 100%;
+    }
+    .card {
+      margin-bottom: 20px;
+    }
+    .top-students {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container-fluid py-4">
+    <h1 class="text-center mb-4">Dashboard de Exámenes</h1>
+    
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h5>Mejores Calificaciones</h5>
+          </div>
+          <div class="card-body top-students">
+            <ul class="list-group">
+              <li v-for="(examen, index) in topExamenes" :key="examen._id" 
+                  class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                  <strong>#{{ index + 1 }}</strong> {{ examen.nombre }} ({{ examen.ci }})
+                </span>
+                <span class="badge bg-primary rounded-pill">{{ examen.nota }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h5>Estadísticas</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <strong>Promedio:</strong> {{ estadisticas.promedio.toFixed(2) }}
+            </div>
+            <div class="mb-3">
+              <strong>Máxima nota:</strong> {{ estadisticas.maxima }}
+            </div>
+            <div class="mb-3">
+              <strong>Mínima nota:</strong> {{ estadisticas.minima }}
+            </div>
+            <div class="mb-3">
+              <strong>Tiempo promedio:</strong> {{ estadisticas.tiempoPromedio.toFixed(2) }}s
+            </div>
+            <div class="mb-3">
+              <strong>Total exámenes:</strong> {{ estadisticas.total }}
+            </div>
+          </div>
+        </div>
+        
+        <button @click="exportToExcel" class="btn btn-warning w-100 mb-3">
+          Exportar a Excel
+        </button>
+      </div>
+      
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header bg-info text-white">
+            <h5>Mapa de Ubicaciones</h5>
+          </div>
+          <div class="card-body">
+            <div id="map" class="map-container"></div>
+          </div>
+        </div>
+        
+        <div class="card mt-4">
+          <div class="card-header bg-danger text-white">
+            <h5>Posibles Grupos de Examen</h5>
+          </div>
+          <div class="card-body">
+            <div v-if="grupos.length === 0" class="alert alert-info">
+              No se detectaron grupos sospechosos
+            </div>
+            <div v-else v-for="(grupo, index) in grupos" :key="index" class="mb-3">
+              <h6>Grupo {{ index + 1 }} ({{ grupo.length }} personas)</h6>
+              <ul class="list-group">
+                <li v-for="persona in grupo" :key="persona._id" class="list-group-item">
+                  {{ persona.nombre }} ({{ persona.ci }}) - Nota: {{ persona.nota }} - 
+                  {{ new Date(persona.createdAt).toLocaleString() }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
