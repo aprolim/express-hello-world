@@ -4,7 +4,7 @@ const app = express();
 const PORT = 3000;
 
 // URL de conexión a MongoDB (modifica con tus datos)
-const MONGO_URI = 'mongodb+srv://invitado6010:Invitado6010.@ghostnix.1dic5zn.mongodb.net/?retryWrites=true&w=majority&appName=ghostnix';
+const MONGO_URI = 'mongodb+srv://invitado6010:Invitado2016.@ghostnix.1dic5zn.mongodb.net/?retryWrites=true&w=majority&appName=ghostnix';
 
 // Conexión a MongoDB
 mongoose.connect(MONGO_URI)
