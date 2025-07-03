@@ -134,7 +134,7 @@ createApp({
         `;
         return div;
       };
-      legend.addTo(map.value);
+    //   legend.addTo(map.value);
     };
     
     const updateMapLayers = () => {
