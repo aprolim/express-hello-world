@@ -1,71 +1,51 @@
-// app.js
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+const { StatusCodes } = require('http-status-codes');
 
-// Configuración inicial
+const noteRoutes = require('./routes/notes');
+const securityMiddleware = require('./middlewares/security');
+
 const app = express();
-const PORT = process.env.PORT || 80;
 
-// Middleware
-app.use(bodyParser.json());
+// Conexión a MongoDB
+require('./config/db');
 
-// Conexión a MongoDB (reemplaza la URL con tu conexión real)
+// Middlewares de seguridad
+app.use(securityMiddleware);
 
-mongoose.connect('mongodb+srv://invitado6010:Invitado2016.@ghostnix.1dic5zn.mongodb.net/?retryWrites=true&w=majority&appName=ghostnix')
-  .then(() => console.log('✅ Conectado a MongoDB (versión moderna)'))
-  .catch(err => console.error('❌ Error de conexión:', err));
+// Middlewares generales
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cors());
 
-// Modelo de datos
-const NotaSchema = new mongoose.Schema({
-  codigo: {
-    type: String,
-    required: true
-  },
-  nota: {
-    type: String,
-    required: true
-  },
-  fechaCreacion: {
-    type: Date,
-    default: Date.now
-  }
+// Rutas
+app.use('/api/notes', noteRoutes);
+
+// Manejo de errores
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    status: 'error',
+    message: 'Algo salió mal en el servidor'
+  });
 });
 
-const Nota = mongoose.model('Nota', NotaSchema);
-
-// Ruta POST
-app.post('/api/notas', async (req, res) => {
-  try {
-    const { codigo, nota } = req.body;
-    
-    if (!codigo || !nota) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios (codigo o nota)' });
-    }
-
-    const nuevaNota = new Nota({ codigo, nota });
-    await nuevaNota.save();
-
-    res.status(201).json({
-      mensaje: 'Nota creada exitosamente',
-      data: nuevaNota
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al procesar la solicitud' });
-  }
+// Ruta no encontrada
+app.all('*', (req, res) => {
+  res.status(StatusCodes.NOT_FOUND).json({
+    status: 'error',
+    message: `No se puede encontrar ${req.originalUrl} en este servidor`
+  });
 });
 
-// Ruta GET para verificar que todo funciona
-app.get('/api/notas', async (req, res) => {
-  try {
-    const notas = await Nota.find();
-    res.json(notas);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener las notas'+error });
-  }
-});
-
-// Iniciar servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
