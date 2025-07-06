@@ -33,7 +33,14 @@ const examenSchema = new mongoose.Schema({
   latitud: { type: Number, required: true },
   longitud: { type: Number, required: true },
   tiempoRespuesta: { type: Number }, // en segundos
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: () => {
+    const currentTime = Date.now();
+    const fourHoursInMilliseconds = 4 * 60 * 60 * 1000;
+    return new Date(currentTime - fourHoursInMilliseconds);
+  } },
+  dispositivo: { type: String, required: true },
+  circunscripcion: { type: String, required: true },
+  intento: { type: Number, required: true }
 });
 
 const Examen = mongoose.model('Examen', examenSchema);
@@ -52,7 +59,7 @@ const connectDB = async () => {
 // Rutas API
 app.post('/api/examenes', async (req, res) => {
   try {
-    const { nota, ci, nombre, correo, codigo, latitud, longitud, tiempoRespuesta } = req.body;
+    const { nota, ci, nombre, correo, codigo, latitud, longitud, tiempoRespuesta, dispositivo, circunscripcion, intento} = req.body;
     
     const nuevoExamen = new Examen({
       nota,
@@ -62,7 +69,10 @@ app.post('/api/examenes', async (req, res) => {
       codigo,
       latitud,
       longitud,
-      tiempoRespuesta
+      tiempoRespuesta,
+      dispositivo,
+      circunscripcion,
+      intento
     });
 
     const examenGuardado = await nuevoExamen.save();
@@ -100,7 +110,10 @@ app.get('/api/examenes/export', async (req, res) => {
       { header: 'Nota', key: 'nota', width: 10 },
       { header: 'Código', key: 'codigo', width: 15 },
       { header: 'Tiempo (s)', key: 'tiempoRespuesta', width: 15 },
-      { header: 'Fecha', key: 'createdAt', width: 20 }
+      { header: 'Fecha', key: 'createdAt', width: 20 },
+      { header: 'Dispositivo', key: 'dispositivo', width: 20 },
+      { header: 'Circunscripcion', key: 'circunscripcion', width: 20 },
+      { header: 'Intento', key: 'intento', width: 20 }
     ];
     
     // Datos
@@ -112,7 +125,10 @@ app.get('/api/examenes/export', async (req, res) => {
         nota: examen.nota,
         codigo: examen.codigo,
         tiempoRespuesta: examen.tiempoRespuesta,
-        createdAt: examen.createdAt.toLocaleString()
+        createdAt: examen.createdAt.toLocaleString(),
+        dispositivo: examen.dispositivo,
+        circunscripcion: examen.circunscripcion,
+        intento: examen.intento
       });
     });
     
