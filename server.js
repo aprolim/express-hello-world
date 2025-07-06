@@ -18,7 +18,10 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = 'mongodb+srv://invitado6010:Invitado2016.@ghostnix.1dic5zn.mongodb.net/examenes?retryWrites=true&w=majority&appName=ghostnix';
 
 // Middleware
-app.use(cors());
+const allowedOrigin = 'https://testing6010.github.io'
+app.use(cors({
+  origin: allowedOrigin
+}));
 app.use(express.json());
 app.use(express.static('public'));
 
