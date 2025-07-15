@@ -177,7 +177,7 @@ app.get('/api/examenes/grupos', async (req, res) => {
         
         const diferenciaTiempo = Math.abs(examenes[i].createdAt - examenes[j].createdAt);
         
-        if (distancia < umbralDistancia && distancia > umbralDistancia2 && diferenciaTiempo < umbralTiempo) {
+        if (distancia < umbralDistancia && distancia > umbralDistancia2 && diferenciaTiempo < umbralTiempo && examenes[j].nombre != examenes[i].nombre ) {
           grupo.push(examenes[j]);
         } else {
           break;
