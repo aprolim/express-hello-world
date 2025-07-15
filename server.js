@@ -163,6 +163,7 @@ app.get('/api/examenes/grupos', async (req, res) => {
     
     const grupos = [];
     const umbralDistancia = 0.001; // ~100 metros
+    const umbralDistancia2 = 0.000001; // ~10 centimetros
     const umbralTiempo = 5 * 60 * 1000; // 5 minutos
     
     for (let i = 0; i < examenes.length; i++) {
@@ -176,7 +177,7 @@ app.get('/api/examenes/grupos', async (req, res) => {
         
         const diferenciaTiempo = Math.abs(examenes[i].createdAt - examenes[j].createdAt);
         
-        if (distancia < umbralDistancia && diferenciaTiempo < umbralTiempo) {
+        if (distancia < umbralDistancia && distancia > umbralDistancia2 && diferenciaTiempo < umbralTiempo) {
           grupo.push(examenes[j]);
         } else {
           break;
