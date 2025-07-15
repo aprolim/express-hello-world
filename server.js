@@ -164,7 +164,7 @@ app.get('/api/examenes/grupos', async (req, res) => {
     const grupos = [];
     const umbralDistancia = 0.001; // ~100 metros
     const umbralDistancia2 = 0.000001; // ~10 centimetros
-    const umbralTiempo = 5 * 60 * 1000; // 5 minutos
+    const umbralTiempo =  480 * 60 * 1000; // 480 minutos
     
     for (let i = 0; i < examenes.length; i++) {
       const grupo = [examenes[i]];
