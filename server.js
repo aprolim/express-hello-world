@@ -116,7 +116,9 @@ app.get('/api/examenes/export', async (req, res) => {
       { header: 'Fecha', key: 'createdAt', width: 20 },
       { header: 'Dispositivo', key: 'dispositivo', width: 20 },
       { header: 'Circunscripcion', key: 'circunscripcion', width: 20 },
-      { header: 'Intento', key: 'intento', width: 20 }
+      { header: 'Intento', key: 'intento', width: 20 },
+      { header: 'Latitud', key: 'latitud', width: 20 },
+      { header: 'Longitud', key: 'longitud', width: 20 },
     ];
     
     // Datos
@@ -131,7 +133,9 @@ app.get('/api/examenes/export', async (req, res) => {
         createdAt: examen.createdAt.toLocaleString(),
         dispositivo: examen.dispositivo,
         circunscripcion: examen.circunscripcion,
-        intento: examen.intento
+        intento: examen.intento,
+        latitud: examen.latitud,
+        longitud: examen.longitud
       });
     });
     
