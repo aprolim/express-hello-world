@@ -15,7 +15,7 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = 'mongodb+srv://invitado6010:Invitado2016.@ghostnix.1dic5zn.mongodb.net/examenes?retryWrites=true&w=majority&appName=ghostnix';
+const MONGO_URI = 'mongodb+srv://invitado6010:Invitado2016.@ghostnix.1dic5zn.mongodb.net/examenes2?retryWrites=true&w=majority&appName=ghostnix';
 
 // Middleware
 const allowedOrigin = 'https://testing6010.github.io'
@@ -211,3 +211,4 @@ const startServer = async () => {
 };
 
 startServer();
+
